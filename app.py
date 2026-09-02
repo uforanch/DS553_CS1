@@ -4,7 +4,7 @@ from huggingface_hub import InferenceClient
 from transformers import pipeline
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
-REMOTE_MODEL = "openai/gpt-oss-20b"
+REMOTE_MODEL = "blank"
 
 pipe = pipeline(
     "text-generation",
