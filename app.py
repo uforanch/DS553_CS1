@@ -72,6 +72,27 @@ Additional Notes {notes}
 Build my schedule for today
 """
 
+def _extract_local_response(outputs):
+    generated = outputs[0]["generated_text"]
+
+    if isinstance(generated, list) and generated:
+        last_turn = generated[-1]
+        content = last_turn.get("content", "") if isinstance(last_turn, dict) else str(last_turn)
+    else:
+        content = str(generated)
+
+    content = content.strip()
+
+    if not content:
+        return (
+            "⚠️ The local model didn't return any text — it likely spent its "
+            "whole token budget \"thinking\" before writing an answer. Try "
+            "raising **Max new tokens** in Advanced settings, or click "
+            "Generate again."
+        )
+
+    return content
+
 
 
 @spaces.GPU
@@ -89,7 +110,7 @@ def local_generate(
         top_p=top_p,
     )
 
-    return outputs[0]["generated_text"][-1]["content"]
+    return _extract_local_response(outputs)
 
 
 def plan_schedule(
@@ -176,12 +197,12 @@ with gr.Blocks(css=fancy_css) as demo:
     )
 
 
-# AI Generated code from Claude Code. - Stephen Prompt: 
+# AI Generated code from Claude Code. - Stephen Prompt: This is my code for a project... complete the prompt section and dialog for my AI Planning App.
     with gr.Column(elem_id="chat-container"):
         with gr.Row():
             with gr.Column(scale=1):
                 tasks_input = gr.Textbox(
-                    label="Todays Tasks",
+                    label="Today's Tasks",
                     placeholder=(
                         "Class Project\n"
                         "Gym\n"
@@ -235,7 +256,7 @@ with gr.Blocks(css=fancy_css) as demo:
                         value=False,
                         )
 
-                generate_button = gr.Button("📅 Generate My Plan", variant="primary")
+                generate_button = gr.Button("Generate My Plan", variant="primary")
 
             with gr.Column(scale=1):
                 plan_output = gr.Markdown(label="Your schedule")
