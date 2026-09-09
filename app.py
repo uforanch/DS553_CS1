@@ -4,6 +4,7 @@ import torch
 import os
 from huggingface_hub import InferenceClient, get_token
 from transformers import pipeline
+import re
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
 REMOTE_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
@@ -18,11 +19,12 @@ DEFAULT_SYSTEM_MESSAGE = """You are a Expert daily planning assistant.\
         
         If a task is not able to fit within the associated time window suggest a new option or ask the user what is of least importance."""
 
-#slight claude based notification I should have put in myself
-#
-#nji
+
 _pipe=None
 
+#Claude put in that we need to check if cuda is possible
+# - should have noticed this
+#nji
 def get_pipe():
     global _pipe
     if _pipe is None:
@@ -35,7 +37,7 @@ def get_pipe():
     return _pipe
 
 
-
+#Also a claude addition - nji
 def resolve_hf_token(oauth_token):
     tok = getattr(oauth_token, "token", None)
     if tok and tok.startswith("hf_"):
@@ -100,6 +102,10 @@ def _extract_local_response(outputs):
     else:
         content = str(generated)
 
+    content = content.strip()
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
+    if "<think>" in content:  # unclosed => whole budget went to thinking
+        content = ""
     content = content.strip()
 
     if not content:
@@ -302,6 +308,7 @@ def build_demo():
                 max_tokens_input,
                 temperature_input,
                 top_p_input,
+                use_local_model_input
             ],
             outputs=plan_output,
         )
@@ -309,5 +316,5 @@ def build_demo():
 
 
 if __name__ == "__main__":
-    build_demo().launch()
+    build_demo().launch().queue().launch(debug=True)
 
