@@ -210,7 +210,7 @@ def plan_schedule(
 
     except Exception as e:
         print("[MODE] local")
-        gr.Warning(str(e))
+        gr.Warning("USING LOCAL: \n" + str(e))
         response = local_generate(
             messages,
             max_tokens,
