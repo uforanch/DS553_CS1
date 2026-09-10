@@ -46,13 +46,7 @@ def resolve_hf_token(oauth_token):
 
 
 tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL)
-pipe = pipeline(
-    "text-generation",
-    model=LOCAL_MODEL,
-    tokenizer=tokenizer,
-    dtype="auto",
-    device="cuda",
-)
+
 
 fancy_css = """
 .gradio-container {
@@ -143,7 +137,7 @@ def local_generate(
         add_generation_prompt=True,
         enable_thinking=False,
     )
-    outputs = pipe(
+    outputs = get_pipe()(
         prompt,
         max_new_tokens=max_tokens,
         do_sample=True,
