@@ -2,12 +2,12 @@ import gradio as gr
 import spaces
 import torch
 import os
-from huggingface_hub import InferenceClient, get_token
-from transformers import pipeline
 import re
+from huggingface_hub import InferenceClient, get_token
+from transformers import pipeline, AutoTokenizer
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
-REMOTE_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731"
+REMOTE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 DEFAULT_SYSTEM_MESSAGE = """You are a Expert daily planning assistant.\
     Given a list of tasks and the time window the user has avaailable build a realistic, well-ordered and planned schedule\
@@ -44,6 +44,15 @@ def resolve_hf_token(oauth_token):
         return tok
     return os.environ.get("HF_TOKEN") or get_token()
 
+
+tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL)
+pipe = pipeline(
+    "text-generation",
+    model=LOCAL_MODEL,
+    tokenizer=tokenizer,
+    dtype="auto",
+    device="cuda",
+)
 
 fancy_css = """
 .gradio-container {
@@ -127,14 +136,21 @@ def local_generate(
     temperature,
     top_p,
 ):
-    outputs = get_pipe()(
+
+    prompt = tokenizer.apply_chat_template(
         messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
+    outputs = pipe(
+        prompt,
         max_new_tokens=max_tokens,
         do_sample=True,
         temperature=temperature,
         top_p=top_p,
+        return_full_text=False,
     )
-
     return _extract_local_response(outputs)
 
 
@@ -155,6 +171,7 @@ def plan_schedule(
         return
     if not start_time or not start_time.strip() or not end_time or not end_time.strip():
         yield " Please input both a start and end time for your day"
+        return
 
     messages = [{"role": "system", "content": system_message},
                 {
