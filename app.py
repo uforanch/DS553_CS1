@@ -175,6 +175,7 @@ def plan_schedule(
             ]
     try:
         print("[MODE] api")
+        gr.Info("Generating")
         if use_local_model:
             raise Exception("Using local model")
         token = resolve_hf_token(hf_token)
@@ -206,11 +207,13 @@ def plan_schedule(
                 token = choices[0].delta.content
 
             response += token
+            print(response)
             yield response
 
     except Exception as e:
         print("[MODE] local")
         gr.Warning("USING LOCAL: \n" + str(e))
+        gr.Info("Generating")
         response = local_generate(
             messages,
             max_tokens,
