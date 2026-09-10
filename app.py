@@ -7,7 +7,7 @@ from huggingface_hub import InferenceClient, get_token
 from transformers import pipeline, AutoTokenizer
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
-REMOTE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+REMOTE_MODEL = "Qwen/Qwen3.8-27B"
 
 DEFAULT_SYSTEM_MESSAGE = """You are a Expert daily planning assistant.\
     Given a list of tasks and the time window the user has avaailable build a realistic, well-ordered and planned schedule\
