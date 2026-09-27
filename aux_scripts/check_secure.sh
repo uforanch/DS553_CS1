@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source $HOME/config.env
+
 [ -f "${KEY_PATH}agent.env" ] && source "${KEY_PATH}agent.env"
 
 

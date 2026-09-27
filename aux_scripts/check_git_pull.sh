@@ -1,5 +1,7 @@
 #! /bin/bash
 
+
+
 cd "$PROJECT_PATH"
 local_hash=$(git rev-parse HEAD)
 

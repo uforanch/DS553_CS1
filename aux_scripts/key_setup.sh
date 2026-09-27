@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source $HOME/config.env
+
 # generate a key, add to authorized keys
 cd "$KEY_PATH" || { echo "Authorized key path DNE"; exit 1; }
 

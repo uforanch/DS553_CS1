@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source $HOME/config.env
+
 # see deploy_second_part.sh
 
 # install basics such as python and uv on runner
