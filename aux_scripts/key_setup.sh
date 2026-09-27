@@ -3,8 +3,10 @@
 # generate a key, add to authorized keys
 cd "$KEY_PATH" || { echo "Authorized key path DNE"; exit 1; }
 
-rm -f mykey*
-ssh-keygen -f mykey -t ed25519 -N ""
+if [ ! -f mykey ]; then
+    ssh-keygen -f mykey -t ed25519 -N ""
+    cat mykey.pub >> authorized_keys
+fi
 
 echo "mykey generated"
 
