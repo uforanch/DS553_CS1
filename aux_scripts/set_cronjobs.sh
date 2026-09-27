@@ -1,5 +1,9 @@
 #! /bin/bash
 
+
+[ -f "${KEY_PATH}agent.env" ] && source "${KEY_PATH}agent.env"
+
+
 JOB="* * * * * $(pwd)/check_secure.sh"
 (crontab -l 2>/dev/null | grep -Fv "$(pwd)/check_secure.sh"; echo "$JOB") | crontab -
 
