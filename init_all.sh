@@ -25,5 +25,5 @@ echo "PROJECT_PATH=$(pwd)">>$HOME/config.env
 source key_setup.sh
 
 bash init_main.sh
-#bash set_cronjobs.sh
-bash connect_mykey.sh
+bash set_cronjobs.sh
+#bash connect_mykey.sh

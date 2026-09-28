@@ -6,6 +6,8 @@ To set up, run `init_all.sh` on the `monitor` after setting variables.
   * utility/test script - connect with "mykey"
 * `connect_student_admin_key.sh`
   * utility/test scritp - connect with student admin key
+* `config.env` 
+  * Put in the same folder as `init_all.sh` and set vars before running
 * `init_all.sh`
   * Run manually on `monitor`
   * Clones repo, moves to aux scripts folder to run rest of scripts

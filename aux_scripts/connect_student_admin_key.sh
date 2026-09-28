@@ -1,3 +1,5 @@
 #! /bin/bash
 
-ssh -i student_admin_key -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}
+source $HOME/config.env
+
+ssh -i ${KEY_PATH}student_admin_key -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}
