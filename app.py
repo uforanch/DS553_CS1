@@ -3,7 +3,7 @@ import spaces
 import torch
 import os
 import re
-from huggingface_hub import InferenceClient, get_token
+from huggingface_hub import InferenceClient, get_token, HfApi
 from transformers import pipeline, AutoTokenizer
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
@@ -38,11 +38,33 @@ def get_pipe():
 
 
 #Also a claude addition - nji
+'''
 def resolve_hf_token(oauth_token):
     tok = getattr(oauth_token, "token", None)
     if tok and tok.startswith("hf_"):
         return tok
     return os.environ.get("HF_TOKEN") or get_token()
+'''
+# Recreating Validate_hf_token from professors Case Study 2 Demo
+def resolve_hf_token(hf_token):
+    if hf_token and hf_token.strip():
+        return hf_token.strip()
+    return os.environ.get("HF_TOKEN") or get_token()
+
+# Professors validate_hf_token function
+def validate_hf_token(hf_token):
+    if not hf_token or not hf_token.strip():
+        return "⚠️ Enter a Hugging Face token."
+
+    try:
+        account = HfApi(token=hf_token.strip()).whoami()
+        username = account.get("name", "unknown user")
+        return f"Valid Hugging Face token for **{username}**."
+    except Exception:
+        return (
+            "The token could not be validated. "
+        )
+
 
 
 tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL)
@@ -158,7 +180,7 @@ def plan_schedule(
     temperature,
     top_p,
     use_local_model,
-    hf_token: gr.OAuthToken,
+    hf_token,
 ):
     if not tasks_text or not tasks_text.strip():
         yield " Please Enter a task you want to complete today"
@@ -181,9 +203,9 @@ def plan_schedule(
         token = resolve_hf_token(hf_token)
         if not token:
             yield (
-                "⚠️ No Hugging Face token available. Log in with the button, "
-                "or set HF_TOKEN / run `hf auth login` when developing locally."
-            )
+                # changed warning messages to reflect token changes with resolve_hf_token
+                "⚠️ No Hugging Face token available. Paste your token in the sidebar, "
+                "or use the local model."            )
             raise Exception("⚠️ No Hugging Face token available")
         client = InferenceClient(
             token=token,
@@ -229,8 +251,6 @@ def plan_schedule(
 
 def build_demo():
     with gr.Blocks(css=fancy_css) as demo:
-        with gr.Sidebar():
-            gr.LoginButton()
 
         gr.Markdown(
             "# AI Task Planner",
@@ -241,7 +261,23 @@ def build_demo():
             "List the tasks you want to complete today and get a ordered schedule to help you complete them!",
             elem_id="app-subtitle",
         )
+                # Token entry immediately below the header (replaces gr.LoginButton and gr.OAuthToken)
+        # Copied from Professors Case Study two. Trying to fix error with Huggingface Token Auth
+        with gr.Row():
+            hf_token_input = gr.Textbox(
+                label="Hugging Face Token",
+                placeholder="hf_...",
+                type="password",
+                scale=4,
+            )
 
+            validate_button = gr.Button(
+                "Validate Token",
+                scale=1,
+            )
+
+        token_status = gr.Markdown()
+        
         # AI Generated code from Claude Code. - Stephen Prompt: This is my code for a project... complete the prompt section and dialog for my AI Planning App.
         with gr.Column(elem_id="chat-container"):
             with gr.Row():
@@ -322,10 +358,19 @@ def build_demo():
                 max_tokens_input,
                 temperature_input,
                 top_p_input,
-                use_local_model_input
+                use_local_model_input,
+                hf_token_input,
             ],
             outputs=plan_output,
         )
+
+        validate_button.click(
+            fn=validate_hf_token,
+            inputs=hf_token_input,
+            outputs=token_status,
+            api_visibility="private",
+        )
+        
         return demo
 
 
