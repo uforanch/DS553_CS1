@@ -10,6 +10,9 @@ source $HOME/config.env
 #
 # no cron jobs as this will be reun
 
+cd "$PROJECT_PATH/../.."
+echo $(pwd)
+
 COMMAND="ssh -i mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
 
 scp -P ${PORT} -o StrictHostKeyChecking=no -r DSCS553 student-admin@${MACHINE}:~/

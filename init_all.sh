@@ -5,15 +5,16 @@
 
 #lines to install cron - later
 
-#gaurdrail to keep it from running twice - later
-rm -rf DSCS553
+#gaurdrail to keep
 
-# git clone and change to folder, set aux scripts folder to an env var
-git clone https://github.com/uforanch/DS553_CS1.git DSCS553
-cd DSCS553/aux_scripts || exit
 
 cp config.env $HOME/config.env
 source $HOME/config.env
+
+# git clone and change to folder, set aux scripts folder to an env var
+rm -rf DSCS553
+git clone https://github.com/uforanch/DS553_CS1.git DSCS553
+cd DSCS553/aux_scripts || exit
 
 
 export PROJECT_PATH=$(pwd)
