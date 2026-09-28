@@ -3,13 +3,14 @@
 source $HOME/config.env
 
 [ -f "${KEY_PATH}agent.env" ] && source "${KEY_PATH}agent.env"
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
 
-if ssh -i student-admin_key -p "${PORT}" -o StrictHostKeyChecking=no -o BatchMode=yes \
+if ssh -i ${KEY_PATH}student-admin_key -p "${PORT}" -o StrictHostKeyChecking=no -o BatchMode=yes \
        -o ConnectTimeout=5 student-admin@${MACHINE} "exit" 2>/dev/null; then
-    echo "Computer reset, attempting lockdown and redeploy"
+    echo "($TIMESTAMP) Computer reset, attempting lockdown and redeploy" >> "redeploy"
     bash init_main.sh
     # put deployment scripts here
 else
-    echo "no studen-admin account"
+    echo "no student-admin account ($TIMESTAMP)" > "running_cs.txt"
 fi
