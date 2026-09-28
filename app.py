@@ -330,5 +330,5 @@ def build_demo():
 
 
 if __name__ == "__main__":
-    build_demo().launch().queue().launch(debug=True)
+    build_demo().queue().launch(server_name="0.0.0.0", server_port=7860)
 
