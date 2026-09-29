@@ -15,6 +15,7 @@ echo $(pwd)
 
 COMMAND="ssh -i mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
 
+${COMMAND} rm -r /DSCS553
 scp -P ${PORT} -o StrictHostKeyChecking=no -r DSCS553 student-admin@${MACHINE}:~/
 
 ${COMMAND} "sudo apt install -qq -y python3-venv"
