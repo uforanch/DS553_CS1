@@ -22,5 +22,5 @@ ${COMMAND} "sudo apt install -qq -y python3-venv"
 ${COMMAND} "curl -LsSf https://astral.sh/uv/install.sh | sh"
 
 ${COMMAND} "cd DSCS553 && \$HOME/.local/bin/uv venv && \$HOME/.local/bin/uv pip install -r requirements_local.txt"
-${COMMAND} "nohup DSCS553/.venv/bin/python3 DSCS553/app.py > log.txt 2>&1"
+${COMMAND} "nohup DSCS553/.venv/bin/python3 DSCS553/app.py > log.txt 2>&1 &"
 
