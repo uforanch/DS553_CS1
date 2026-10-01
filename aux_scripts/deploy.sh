@@ -15,6 +15,7 @@ echo $(pwd)
 
 COMMAND="ssh -i ${KEY_PATH}mykey -p ${PORT} -o StrictHostKeyChecking=no student-admin@${MACHINE}"
 
+${COMMAND} pkill -f app.py
 ${COMMAND} rm -r /DSCS553
 scp -i ${KEY_PATH}mykey -P ${PORT} -o StrictHostKeyChecking=no -r DSCS553 student-admin@${MACHINE}:~/
 

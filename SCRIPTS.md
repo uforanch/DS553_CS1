@@ -30,19 +30,19 @@ To set up, run `init_all.sh` on the `monitor` after setting variables.
   * Copies authorized keys file to other computer 
 * `deploy.sh`
   * Runs from `monitor` to set up `runner`
-  * Installs basics from webinstall.dev 
+  * Kills previous process if there
   * Uses uv to install repo
 * `set_cronjobs.sh`
   * Runs from `monitor`
   * Runs a cron job on `monitor` to run `check_secure.sh` every so often
   * Runs a cron job on `runner` to run `check_git_pull.sh`
 * `check_secure.sh`
-  * Checks if keys still work
-  * If not, run `init_main.sh` to lock down `runner` and deploy the repo again 
-* `check_git_pull.sh`
-  * Runs from `runner`
-  * checks for new commit, and if there is one pull and notify
-* `red_team_attack.sh`
+  * Checks if student-admin account key gets in 
+  * Checks if app running on port
+  * Checks if git commit 
+  * If not, run `init_main.sh` to lock down `runner` and deploy the repo again
+    * Additionally, kill the cron jobs, wait five minutes for the install, start them again
+*  `red_team_attack.sh`
   * Can be run on any device with a VPN to get past WPI firewall.
   * perform the red team attack with random times and ordering
 
