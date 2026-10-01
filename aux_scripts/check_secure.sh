@@ -14,7 +14,7 @@ local_hash=$(git rev-parse HEAD)
 repo_hash=$(git ls-remote origin HEAD | awk '{print $1}')
 # or:
 
-curl -s -m 5 -o /dev/null http://paffenroth-23.dyn.wpi.edu:8002;
+curl -s -m 5 -o /dev/null "${MACHINE}:${DETECT_PORT}";
 status=$?
 
 if ssh -i ${KEY_PATH}student-admin_key -p "${PORT}" -o StrictHostKeyChecking=no -o BatchMode=yes \
