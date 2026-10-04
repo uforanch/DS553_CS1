@@ -8,6 +8,10 @@ from transformers import pipeline, AutoTokenizer
 
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
 REMOTE_MODEL = "Qwen/Qwen3.8-27B"
+# Pinned provider: the auto-selected one rejects the enable_thinking switch,
+# and with thinking on the model can burn the whole token budget before answering.
+# https://huggingface.co/docs/inference-providers/en/index
+REMOTE_PROVIDER = "deepinfra"
 
 DEFAULT_SYSTEM_MESSAGE = """You are a Expert daily planning assistant.\
     Given a list of tasks and the time window the user has avaailable build a realistic, well-ordered and planned schedule\
@@ -209,7 +213,8 @@ def plan_schedule(
             raise Exception("⚠️ No Hugging Face token available")
         client = InferenceClient(
             token=token,
-            model=REMOTE_MODEL,
+            model=f"{REMOTE_MODEL}:{REMOTE_PROVIDER}",
+            timeout=30,
         )
 
 
@@ -221,6 +226,7 @@ def plan_schedule(
             stream=True,
             temperature=temperature,
             top_p=top_p,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         ):
             choices = chunk.choices
             token = ""
@@ -231,6 +237,9 @@ def plan_schedule(
             response += token
             print(response)
             yield response
+
+        if not response.strip():
+            raise Exception("Remote model returned no text")
 
     except Exception as e:
         print("[MODE] local")
