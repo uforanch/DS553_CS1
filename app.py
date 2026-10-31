@@ -1,8 +1,7 @@
 import gradio as gr
 import spaces
 import torch
-import os
-import re
+import os, re, time
 from huggingface_hub import InferenceClient, get_token, HfApi
 from transformers import pipeline, AutoTokenizer
 from prometheus_client import start_http_server, Counter, Summary
@@ -207,6 +206,9 @@ def plan_schedule(
                     "content":build_planning_prompt(tasks_text, start_time, end_time, notes),
                 },
             ]
+
+    REQUEST_COUNTER.inc()
+    start_t = time.perf_counter()
     try:
         print("[MODE] api")
         gr.Info("Generating")
@@ -245,9 +247,11 @@ def plan_schedule(
             response += token
             print(response)
             yield response
-
+        SUCCESSFUL_REQUESTS.inc()
         if not response.strip():
+            FAILED_REQUESTS.inc()
             raise Exception("Remote model returned no text")
+
 
     except Exception as e:
         print("[MODE] local")
@@ -262,8 +266,10 @@ def plan_schedule(
         print(response)
 
         yield response
+        SUCCESSFUL_REQUESTS.inc()
         return
-
+    finally:
+        REQUEST_DURATION.observe(time.perf_counter() - start_t)
 
 
 def build_demo():
