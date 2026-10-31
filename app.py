@@ -5,7 +5,15 @@ import os
 import re
 from huggingface_hub import InferenceClient, get_token, HfApi
 from transformers import pipeline, AutoTokenizer
+from prometheus_client import start_http_server, Counter, Summary
 
+# --- Prometheus metrics ---
+REQUEST_COUNTER = Counter('app_requests_total', 'Total number of requests')
+SUCCESSFUL_REQUESTS = Counter('app_successful_requests_total', 'Total number of successful requests')
+FAILED_REQUESTS = Counter('app_failed_requests_total', 'Total number of failed requests')
+REQUEST_DURATION = Summary('app_request_duration_seconds', 'Time spent processing request')
+
+LOCAL_MODEL = "Qwen/Qwen3-0.6B"
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
 REMOTE_MODEL = "Qwen/Qwen3.8-27B"
 # Pinned provider: the auto-selected one rejects the enable_thinking switch,

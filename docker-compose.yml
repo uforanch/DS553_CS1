@@ -1,0 +1,48 @@
+services:
+  app:
+    build: .
+    hostname: app
+    networks:
+      appnet:
+        aliases:
+          - app
+    ports:
+      - "2222:22"
+      - "10234:7860"
+      - "9100:9100"
+      - "8000:8000"
+    restart: unless-stopped
+  spy:
+    build: spy/
+    hostname: spy
+    networks:
+      appnet:
+        aliases:
+          - spy
+    ports:
+      - "2222:22"
+    restart: unless-stopped
+  prometheus:
+    build: Prometheus/
+    hostname: prometheus
+    networks:
+      appnet:
+        aliases:
+          - prometheus
+    ports:
+      - "2223:22"
+      - "9090:9090"
+    restart: unless-stopped
+  grafana:
+    build: Grafana/
+    hostname: grafana
+    networks:
+      appnet:
+        aliases:
+          - grafana
+    ports:
+      - "2224:22"
+      - "300:300"
+    restart: unless-stopped
+networks:
+  appnet:
