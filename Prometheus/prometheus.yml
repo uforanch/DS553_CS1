@@ -2,9 +2,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'gradio_app'
+  - job_name: 'group2_killswitch_app'
     static_configs:
-      - targets: ['app:8000']  # Gradio metrics
+      - targets: ['group2_killswitch_app:8000']  # Gradio metrics
 
   - job_name: 'node_exporter_gradio'
     static_configs:

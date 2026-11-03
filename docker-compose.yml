@@ -1,11 +1,11 @@
 services:
   app:
     build: .
-    hostname: app
+    hostname: group2_killswitch_app
     networks:
       appnet:
         aliases:
-          - app
+          - group2_killswitch_app
     ports:
       - "2222:22"
       - "10234:7860"
