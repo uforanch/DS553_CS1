@@ -1,3 +1,5 @@
+volumes:
+  prometheus-volume:
 services:
   app:
     build: .
@@ -7,14 +9,20 @@ services:
         aliases:
           - group2_killswitch_app
     ports:
-      - "2222:22"
+      - "2225:22"
       - "10234:7860"
       - "9100:9100"
       - "8000:8000"
+    volumes:
+      - prometheus-volume:/prometheus
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
   spy:
     build: spy/
     hostname: spy
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     networks:
       appnet:
         aliases:
@@ -42,7 +50,8 @@ services:
           - grafana
     ports:
       - "2224:22"
-      - "300:300"
+      - "3000:3000"
     restart: unless-stopped
+
 networks:
   appnet:
