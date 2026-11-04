@@ -52,6 +52,18 @@ services:
       - "2224:22"
       - "3000:3000"
     restart: unless-stopped
+  ngrok:
+    image: ngrok/ngrok:latest
+    command: http app:7860 --url https://exorcism-refill-sincerity.ngrok-free.dev
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - appnet
+    ports:
+      - "4040:4040"   # optional: ngrok's web inspector
+    restart: unless-stopped
 
 networks:
   appnet:
