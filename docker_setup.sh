@@ -32,14 +32,14 @@ docker build -t grafana Grafana/
 # app
 docker run -d --name group2_killswitch_app \
     --network "$NETWORK" --network-alias group2_killswitch_app \
-    -p 2225:22 -p 10235:7860 -p 9101:9100 -p 8000:8000 \
+    -p 1800:22 -p 1801:7860 -p 1802:9100 -p 1803:8000 \
     --restart unless-stopped \
     group2_killswitch_app
 
 # spy
 docker run -d --name group2_spy  \
     --network "$NETWORK" \
-    -p 2222:22 \
+    -p 1804:22 \
     --restart unless-stopped \
     spy
 
@@ -48,7 +48,7 @@ docker run -d --name group2_prometheus  \
     --network "$NETWORK" \
     -v prometheus-volume:/prometheus \
     -v "$(pwd)/Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml" \
-    -p 2223:22 -p 9090:9090 \
+    -p 1805:22 -p 1806:9090 \
     --restart unless-stopped \
     prometheus
 
@@ -57,7 +57,7 @@ docker run -d --name group2_grafana  \
     --network "$NETWORK"  \
     -e GF_SECURITY_ADMIN_USER=admin \
     -e GF_SECURITY_ADMIN_PASSWORD=admin \
-    -p 2224:22 -p 3001:3000 \
+    -p 1807:22 -p 1808:3000 \
     --restart unless-stopped \
     grafana
 
@@ -65,10 +65,10 @@ docker run -d --name group2_grafana  \
 # "app" was the compose service name; with plain docker run we use the
 # container name/alias instead, so the target is group2_killswitch_app:7860.
 # Everything after the image name is the ngrok command (compose's "command:").
-docker run -d --name ngrok \
+docker run -d --name group2_ngrok \
     --network "$NETWORK" \
     -e NGROK_AUTHTOKEN="$NGROK_TOKEN" \
-    -p 4040:4040 \
+    -p 1809:4040 \
     --restart unless-stopped \
     ngrok/ngrok:latest \
     http group2_killswitch_app:7860 --url "$NGROK_URL"
