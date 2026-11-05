@@ -4,7 +4,7 @@ import torch
 import os, re, time
 from huggingface_hub import InferenceClient, get_token, HfApi
 from transformers import pipeline, AutoTokenizer
-from prometheus_client import start_http_server, Counter, Summary
+from prometheus_client import start_http_server, Counter, Summary, Gauge, Info
 
 # --- Prometheus metrics ---
 REQUEST_COUNTER = Counter('app_requests_total', 'Total number of requests')
@@ -12,13 +12,31 @@ SUCCESSFUL_REQUESTS = Counter('app_successful_requests_total', 'Total number of 
 FAILED_REQUESTS = Counter('app_failed_requests_total', 'Total number of failed requests')
 REQUEST_DURATION = Summary('app_request_duration_seconds', 'Time spent processing request')
 
-LOCAL_MODEL = "Qwen/Qwen3-0.6B"
+# how many concurrent requests your app is handling right now. 
+IN_FLIGHT_REQUESTS = Gauge('app_in_flight_requests', 'Current number of in-flight requests')
+
+# Token counter to see the usage of our application
+TOKENS = Counter('app_llm_tokens_total', 'Tokens used', ['type'])  # type = input/output
+MODEL_INFO = Info('app_model', 'Model being served')
+
+# Health Signals for our Application
+MODEL_LOADED = Gauge('app_model_loaded', '1 if model is loaded')
+LAST_SUCCESS = Gauge('app_last_success_timestamp_seconds', 'Unix time of last success')
+
+
+
 LOCAL_MODEL = "Qwen/Qwen3-0.6B"
 REMOTE_MODEL = "Qwen/Qwen3.8-27B"
 # Pinned provider: the auto-selected one rejects the enable_thinking switch,
 # and with thinking on the model can burn the whole token budget before answering.
 # https://huggingface.co/docs/inference-providers/en/index
 REMOTE_PROVIDER = "deepinfra"
+
+MODEL_INFO.info({    'remote_model': REMOTE_MODEL, 'remote_provider': REMOTE_PROVIDER, 'local_model': LOCAL_MODEL,})
+
+# Fallback counter for when a user cannot access the Remote Model
+FALLBACKS = Counter('app_fallback_to_local_total', 'Times the remote model failed and local was used')
+
 
 DEFAULT_SYSTEM_MESSAGE = """You are a Expert daily planning assistant.\
     Given a list of tasks and the time window the user has avaailable build a realistic, well-ordered and planned schedule\
@@ -45,6 +63,7 @@ def get_pipe():
             dtype="auto",
             device="cuda" if torch.cuda.is_available() else "cpu",
         )
+        MODEL_LOADED.set(1)
     return _pipe
 
 
@@ -180,6 +199,8 @@ def local_generate(
     )
     return _extract_local_response(outputs)
 
+def count_tokens(text):
+    return len(tokenizer.encode(text))
 
 def plan_schedule(
     tasks_text,
@@ -207,70 +228,83 @@ def plan_schedule(
                 },
             ]
 
+    # updated to expose information for Prometheus
     REQUEST_COUNTER.inc()
+    IN_FLIGHT_REQUESTS.inc()
     start_t = time.perf_counter()
-    try:
-        print("[MODE] api")
-        gr.Info("Generating")
-        if use_local_model:
-            raise Exception("Using local model")
-        token = resolve_hf_token(hf_token)
-        if not token:
-            yield (
-                # changed warning messages to reflect token changes with resolve_hf_token
-                "⚠️ No Hugging Face token available. Paste your token in the sidebar, "
-                "or use the local model."            )
-            raise Exception("⚠️ No Hugging Face token available")
-        client = InferenceClient(
-            token=token,
-            model=f"{REMOTE_MODEL}:{REMOTE_PROVIDER}",
-            timeout=30,
-        )
+    TOKENS.labels(type="input").inc(sum(count_tokens(m["content"]) for m in messages))
+    response = ""
 
+    # Updated to work with our new metrics for Prometheus monitoring
+    
+    try:  # OUTER try: did the request succeed overall? (for metrics)
+        try:  # INNER try: your existing remote -> local fallback logic
+            print("[MODE] api")
+            gr.Info("Generating")
+            if use_local_model:
+                raise Exception("Using local model")
+            token = resolve_hf_token(hf_token)
+            if not token:
+                yield (
+                    "⚠️ No Hugging Face token available. Paste your token in the sidebar, "
+                    "or use the local model."
+                )
+                raise Exception("⚠️ No Hugging Face token available")
+            client = InferenceClient(
+                token=token,
+                model=f"{REMOTE_MODEL}:{REMOTE_PROVIDER}",
+                timeout=30,
+            )
 
-        response = ""
+            for chunk in client.chat_completion(
+                messages,
+                max_tokens=max_tokens,
+                stream=True,
+                temperature=temperature,
+                top_p=top_p,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            ):
+                choices = chunk.choices
+                piece = ""
+                if len(choices) and choices[0].delta.content:
+                    piece = choices[0].delta.content
+                response += piece
+                print(response)
+                yield response
 
-        for chunk in client.chat_completion(
-            messages,
-            max_tokens=max_tokens,
-            stream=True,
-            temperature=temperature,
-            top_p=top_p,
-            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-        ):
-            choices = chunk.choices
-            token = ""
+            if not response.strip():
+                raise Exception("Remote model returned no text")
 
-            if len(choices) and choices[0].delta.content:
-                token = choices[0].delta.content
-
-            response += token
+        except Exception as e:
+            # Remote failed (or local was chosen) -> fall back to local model
+            print("[MODE] local")
+            if not use_local_model:
+                FALLBACKS.inc()
+            gr.Warning("USING LOCAL: \n" + str(e))
+            gr.Info("Generating")
+            response = local_generate(
+                messages,
+                max_tokens,
+                temperature,
+                top_p,
+            )
             print(response)
             yield response
+
+        # --- Metrics: success (only reached if remote OR local worked) ---
+        TOKENS.labels(type="output").inc(count_tokens(response))
         SUCCESSFUL_REQUESTS.inc()
-        if not response.strip():
-            FAILED_REQUESTS.inc()
-            raise Exception("Remote model returned no text")
+        LAST_SUCCESS.set_to_current_time()
 
+    except Exception:
+        # Only reached if the local fallback ALSO failed
+        FAILED_REQUESTS.inc()
+        raise
 
-    except Exception as e:
-        print("[MODE] local")
-        gr.Warning("USING LOCAL: \n" + str(e))
-        gr.Info("Generating")
-        response = local_generate(
-            messages,
-            max_tokens,
-            temperature,
-            top_p,
-        )
-        print(response)
-
-        yield response
-        SUCCESSFUL_REQUESTS.inc()
-        return
     finally:
+        # Always runs, success or failure
+        IN_FLIGHT_REQUESTS.dec()
         REQUEST_DURATION.observe(time.perf_counter() - start_t)
-
 
 def build_demo():
     with gr.Blocks(css=fancy_css) as demo:
