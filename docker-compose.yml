@@ -13,16 +13,10 @@ services:
       - "10234:7860"
       - "9100:9100"
       - "8000:8000"
-    volumes:
-      - prometheus-volume:/prometheus
-      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
   spy:
     build: spy/
     hostname: spy
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
     networks:
       appnet:
         aliases:
@@ -37,6 +31,9 @@ services:
       appnet:
         aliases:
           - prometheus
+    volumes:
+      - prometheus-volume:/prometheus
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "2223:22"
       - "9090:9090"
@@ -48,6 +45,9 @@ services:
       appnet:
         aliases:
           - grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     ports:
       - "2224:22"
       - "3000:3000"
