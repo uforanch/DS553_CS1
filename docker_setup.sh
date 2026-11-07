@@ -13,6 +13,7 @@ if [ -z "$NGROK_TOKEN" ]; then
     exit 1
 fi
 
+#on our wonderful machine use `export`
 NETWORK=appnet
 NGROK_URL=https://exorcism-refill-sincerity.ngrok-free.dev
 

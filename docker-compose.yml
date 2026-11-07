@@ -1,7 +1,7 @@
 volumes:
   prometheus-volume:
 services:
-  app:
+  group2_killswitch_app:
     build: .
     hostname: group2_killswitch_app
     networks:
@@ -9,50 +9,39 @@ services:
         aliases:
           - group2_killswitch_app
     ports:
-      - "2225:22"
-      - "10234:7860"
-      - "9100:9100"
-      - "8000:8000"
+      - "1800:22"
+      - "1801:7860"
+      - "1802:9100"
+      - "1803:8000"
     restart: unless-stopped
-  spy:
+  group2_spy:
     build: spy/
-    hostname: spy
     networks:
       appnet:
         aliases:
-          - spy
+          - group2_spy
     ports:
-      - "2222:22"
+      - "1804:22"
     restart: unless-stopped
-  prometheus:
+  group2_prometheus:
     build: Prometheus/
-    hostname: prometheus
-    networks:
-      appnet:
-        aliases:
-          - prometheus
     volumes:
       - prometheus-volume:/prometheus
       - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "2223:22"
-      - "9090:9090"
+      - "1805:22"
+      - "1806:9090"
     restart: unless-stopped
-  grafana:
+  group2_grafana:
     build: Grafana/
-    hostname: grafana
-    networks:
-      appnet:
-        aliases:
-          - grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
     ports:
-      - "2224:22"
-      - "3000:3000"
+      - "1807:22"
+      - "1808:3000"
     restart: unless-stopped
-  ngrok:
+  group2_ngrok:
     image: ngrok/ngrok:latest
     command: http app:7860 --url https://exorcism-refill-sincerity.ngrok-free.dev
     environment:
@@ -62,7 +51,7 @@ services:
     networks:
       - appnet
     ports:
-      - "4040:4040"   # optional: ngrok's web inspector
+      - "1809:4040"   # optional: ngrok's web inspector
     restart: unless-stopped
 
 networks:
